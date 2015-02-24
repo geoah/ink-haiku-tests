@@ -150,9 +150,8 @@ type JSONSignature struct {
 }
 
 type Instance struct {
-	Owner      Identity      `json:"owner"`
-	Payload    Payload       `json:"payload"`
-	Signatures []jsSignature `json:"signatures"`
+	Owner   Identity `json:"owner"`
+	Payload Payload  `json:"payload"`
 }
 
 func (s *Instance) ToJSON() ([]byte, error) {
@@ -160,25 +159,10 @@ func (s *Instance) ToJSON() ([]byte, error) {
 	return instanceStr, err
 }
 
-func (s *Instance) ToProperJWS() (*libtrust.JSONSignature, error) {
-
-	signatureJSON, err := json.MarshalIndent(s.Signatures, "", "     ")
-	if err != nil {
-		log.Println("Could not marshal signature")
-		log.Fatal(err)
-	}
-	payloadJSON, err := s.Payload.ToJSON()
-	if err != nil {
-		log.Println("Could not marshal payload")
-		log.Fatal(err)
-	}
-	// fmt.Println(string(signatureJSON))
-	jws, err := libtrust.ParsePrettySignature(payloadJSON, string(signatureJSON))
-	if err != nil {
-		log.Println("Could create jws from content and signatures")
-		log.Fatal(err)
-	}
-	return jws, nil
+func (s *Instance) GetProperJWS() (*libtrust.JSONSignature, error) {
+	payloadJSON, _ := s.Payload.ToJSON()
+	jws, err := libtrust.ParsePrettySignature(payloadJSON, "signatures")
+	return jws, err
 }
 
 func (s *Instance) SetPayloadFromJson(jsonPayload []byte) {
@@ -229,11 +213,10 @@ func (s *Instance) Sign() {
 }
 
 func (s *Instance) Verify() bool {
-	payloadJSON, _ := s.Payload.ToJSON()
-	jws, _ := libtrust.ParsePrettySignature(payloadJSON, "signatures")
+	jws, _ := s.GetProperJWS()
 	_, err := jws.Verify()
-	// fmt.Println(err)
 	if err != nil {
+		fmt.Println(err)
 		return false
 	} else {
 		return true
