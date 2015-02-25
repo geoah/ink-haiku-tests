@@ -71,7 +71,7 @@ type Payload struct {
 }
 
 func (s *Payload) ToJSON() ([]byte, error) {
-	payloadStr, err := json.MarshalIndent(s, "", "     ")
+	payloadStr, err := json.MarshalIndent(s, "", "    ")
 	return payloadStr, err
 }
 
@@ -81,7 +81,7 @@ type Instance struct {
 }
 
 func (s *Instance) ToJSON() ([]byte, error) {
-	instanceStr, err := json.MarshalIndent(s, "", "     ")
+	instanceStr, err := json.MarshalIndent(s, "", "    ")
 	return instanceStr, err
 }
 
