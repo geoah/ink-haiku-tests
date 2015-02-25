@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
@@ -91,39 +90,49 @@ func (s *Instance) GetProperJWS() (*libtrust.JSONSignature, error) {
 	return jws, err
 }
 
-func (s *Instance) SetPayloadFromJson(jsonPayload []byte) { // TODO Return error
-	json.Unmarshal(jsonPayload, &s.Payload)
+func (s *Instance) SetPayloadFromJson(jsonPayload []byte) error {
+	return json.Unmarshal(jsonPayload, &s.Payload)
 }
 
-func (s *Instance) Sign() { // TODO Return error
+func (s *Instance) Sign() error {
 	payload, err := s.Payload.ToJSON()
 	if err != nil {
 		log.Println("Could not encode payload")
-		log.Fatal(err)
+		return err
 	}
 	js, err := libtrust.NewJSONSignature(payload)
 	if err != nil {
 		log.Println("Could not create jsign")
-		log.Fatal(err)
+		return err
 	}
-	err = js.Sign(s.Owner.GetPrivateKey())
+	jwk, err := s.Owner.GetPrivateKey()
+	if err != nil {
+		return err
+	}
+	err = js.Sign(jwk)
 	if err != nil {
 		log.Println("Could not sign payload")
-		log.Fatal(err)
+		return err
 	}
 	jsJSON, err := js.JWS()
+	if err != nil {
+		return err
+	}
 	tempJSONSignature := JSONSignature{}
-	json.Unmarshal(jsJSON, &tempJSONSignature)
+	err = json.Unmarshal(jsJSON, &tempJSONSignature)
+	if err != nil {
+		return err
+	}
 	s.Payload.Signatures = tempJSONSignature.Signatures
+	return nil
 }
 
-func (s *Instance) Verify() bool { // TODO Return error
+func (s *Instance) Verify() (bool, error) {
 	jws, _ := s.GetProperJWS()
 	_, err := jws.Verify()
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	} else {
-		return true
+		return true, nil
 	}
 }
